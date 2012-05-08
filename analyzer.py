@@ -1,37 +1,61 @@
+import os
+
 #Initialize a class for storing url and their count
-for line in open("log"):
-	print line,
-	"""
-	val=line.find('GET')+4
-	if(val==3):
-		val=line.find('POST')+5
-	print val
-	end=line.find(' ',val,val+10)
-	print end
-	"""
-#This is an efficient way, yet i just have to create a string from start and end positions
-#The +3 and +4 doesnt look professional and this is not easily scalable for other http methods
-	"""
-	flag=0
-	for word in line.split():
-		if(flag==1):
-			print word
-			break
-		if(word=="(GET" or word=="GET" or word=="(POST" or word=="POST"):
-			flag=1
-	"""
-#This is not an efficient way since we have to check each and every word and a good coder doesnt use flags
-#and if the method is not detached(eg:"(POST /r/") ie without a space, work becomes tedious
-	part=""
-	if (len(line.split('GET'))==2):
-		part=line.split('GET')[1]
-	elif(len(line.split('POST'))==2):
-		part=line.split('POST')[1]
-	if(part):
-		url=part.split()[0]
-		print url
-		#The storing operations here
-		
-#Sort the objects based on the ascending order of count
-#Store it in a file in the order for retrival purposes
-#Template- URL count \ns
+class urlHits():
+		url=""
+		count=0
+		def __init__(self,url,cnt):
+			self.url=url
+			self.count=cnt
+		def __cmp__(self,urlHit):
+			return cmp(self.count,urlHit.count)
+		#for object sorting, the cmp operation must be between the count value
+
+def analyseLog(listName,logName):
+	urlList=list() #Creates an empty list
+	for line in open(listName):
+		if(len(line.split())>2):
+			urlList.append(urlHits(line.split()[2],int(line.split()[0])))
+	#Reads the file and gets the previous hit list and adds them to the urlList as urlHits objects
+	for line in open(logName):
+		part=""
+		if (len(line.split('GET'))==2):
+			part=line.split('GET')[1]
+		elif(len(line.split('POST'))==2):
+			part=line.split('POST')[1]
+		if(part):
+			url=part.split()[0]
+			#Flag for checking if the url is no already present in the list
+			flag=0 
+			#The storing operations here
+			for item in urlList:
+				if(item.url==url):
+						item.count+=1
+						flag=1 #if present just add count
+						break
+			if(flag==0):
+				if(url.startswith('/r/')):
+					urlList.append(urlHits(url,1))
+	#Sort the objects based on the ascending order of count
+	#Store it in a file in the order for retrival purposes
+	urlList.sort(None,None,True) #also sorts in reverse
+	f=file(listName,'w')
+	for item in urlList:
+		f.write(str(item.count))
+		f.write(" - ")
+		f.write(item.url)
+		f.write("\n") 
+	#Template- "count - URL \n" s
+	f.close()
+
+#For headers
+fil=file("List.log",'w')
+#fil.write("-----------------------------------------------------------------------------------------\nCount - URL\n------------------------------------------------------------------------------------------\n")
+fil.close()
+#print str(os.getcwd())
+for x in os.listdir("logs/"):
+	x="logs/"+x
+	analyseLog("List.log",x)
+#The log files being inside a folder named "logs" in the directory of this python file
+#Sample time taken for execution: 8 minutes 26.692 seconds
+
